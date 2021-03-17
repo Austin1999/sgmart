@@ -2,11 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:sgmart/responsive/constants.dart';
+import 'package:sgmart/login&signin/login.dart';
+import 'package:sgmart/constants.dart';
 import 'dart:html';
 import 'package:firebase/firebase.dart' as fb;
 import '../auth.dart';
-import '../main.dart';
 
 class AdminPage extends StatefulWidget {
   @override
@@ -37,7 +37,7 @@ class _AdminPageState extends State<AdminPage> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => HomePage(),
+                      builder: (context) => Login(),
                     ),
                   );
                 },
@@ -128,7 +128,7 @@ class _AdminPageState extends State<AdminPage> {
                                         onPressed: () async {
                                           FirebaseApp tempApp =
                                               await Firebase.initializeApp(
-                                                  name: 'temporaryregister',
+                                                  name: 'temporaryregite',
                                                   options:
                                                       Firebase.app().options);
                                           UserCredential result =
@@ -146,14 +146,40 @@ class _AdminPageState extends State<AdminPage> {
                                                                     data.get(
                                                                         'phone'))
                                                       });
-
+                                          var gen = await FirebaseFirestore
+                                              .instance
+                                              .collection('Users')
+                                              .doc('general')
+                                              .get()
+                                              .then((value) {
+                                            return value.get('id') + 1;
+                                          });
+                                          var refid = await FirebaseFirestore
+                                              .instance
+                                              .collection('Users')
+                                              .doc(data.get('ref'))
+                                              .get()
+                                              .then((value) {
+                                            return value.get('id');
+                                          });
+                                          await FirebaseFirestore.instance
+                                              .collection('Users')
+                                              .doc('general')
+                                              .update({
+                                            'id': FieldValue.increment(1)
+                                          });
                                           FirebaseFirestore.instance
                                               .collection('Users')
                                               .doc(data.get('phone'))
                                               .set(
                                             {
+                                              'parent': data.get('ref') != null
+                                                  ? false
+                                                  : true,
+                                              'id': refid.toString() +
+                                                  gen.toString(),
                                               "searchindex": setSearchParam(
-                                                  result.user.uid),
+                                                  data.get('phone')),
                                               'adminverified': true
                                             },
                                             SetOptions(merge: true),

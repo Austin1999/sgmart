@@ -1,12 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dynamic_treeview/dynamic_treeview.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sgmart/auth.dart';
+import 'package:sgmart/login&signin/login.dart';
 import 'package:sgmart/main.dart';
 import 'package:flutter_share_me/flutter_share_me.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:sgmart/responsive/constants.dart';
+import 'package:sgmart/constants.dart';
+import 'package:sgmart/widgets/treeview.dart';
 
 class UserHomePage extends StatefulWidget {
   final user;
@@ -32,33 +35,6 @@ class _UserHomePageState extends State<UserHomePage> {
       child: Scaffold(
         backgroundColor: Colors.blueGrey.shade50,
         key: _scaffoldKey,
-        drawer: Drawer(
-          child: Column(
-            children: [
-              ListTile(
-                title: Text('SignOut'),
-                onTap: () {
-                  AuthService().signOut();
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomePage(),
-                    ),
-                  );
-                },
-              ),
-              Divider(
-                thickness: 0.3,
-                color: Colors.black,
-              ),
-            ],
-          ),
-        ),
-        appBar: AppBar(
-          iconTheme: Theme.of(context).iconTheme.copyWith(color: Colors.black),
-          elevation: 0.0,
-          backgroundColor: Colors.blueGrey.shade50,
-        ),
         body: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(12.0),
@@ -90,6 +66,7 @@ class _UserHomePageState extends State<UserHomePage> {
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
                                     CircleAvatar(
+                                      backgroundColor: kPrimaryColor,
                                       child: Text(
                                           data
                                               .get('name')
@@ -145,14 +122,58 @@ class _UserHomePageState extends State<UserHomePage> {
                                   style: Theme.of(context).textTheme.headline5,
                                 ),
                               ),
-                              ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: snapshot.data.get('referel').length,
-                                itemBuilder: (context, index) {
-                                  return ListTile(
-                                    title: Text(
-                                        '$index . ${snapshot.data.get('referel')[index]}'),
-                                  );
+                              FutureBuilder(
+                                future: FirebaseFirestore.instance
+                                    .collection('Users')
+                                    .where('id',
+                                        isGreaterThanOrEqualTo:
+                                            '${snapshot.data.get('id')}')
+                                    .where('id',
+                                        isLessThanOrEqualTo:
+                                            '${snapshot.data.get('id')}~')
+                                    // .orderBy('level')
+                                    // .where('parent', isEqualTo: false)
+                                    .get(),
+                                builder: (context, snapshot1) {
+                                  if (!snapshot1.hasData) {
+                                    return Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  } else {
+                                    // return ListView.builder(
+                                    //   shrinkWrap: true,
+                                    //   itemCount: snapshot1.data.docs.length,
+                                    //   itemBuilder: (context, index) {
+                                    //     return ListTile(
+                                    //       title: Text(
+                                    //           '${index + 1} . ${snapshot1.data.docs[index].get('name')}'),
+                                    //     );
+                                    //   },
+                                    // );
+                                    return DynamicTreeView(
+                                      data: List<BaseData>.generate(
+                                        snapshot1.data.docs.length,
+                                        (index1) {
+                                          var data1 =
+                                              snapshot1.data.docs[index1];
+                                          return DataModel(
+                                            id: int.parse(
+                                                  data1.get('level'),
+                                                ) +
+                                                1,
+                                            name: data1.get('name'),
+                                            parentId:
+                                                int.parse(data1.get('level')) ==
+                                                        0
+                                                    ? -1
+                                                    : int.parse(
+                                                        data1.get('level'),
+                                                      ),
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  }
                                 },
                               ),
                             ],

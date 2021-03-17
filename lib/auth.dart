@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:sgmart/home.dart';
-import 'package:sgmart/main.dart';
-import 'package:sgmart/responsive/constants.dart';
+import 'package:sgmart/login&signin/login.dart';
+import 'package:sgmart/screen/landing_page.dart';
 
 import 'admin/adminpage.dart';
 
@@ -23,10 +22,11 @@ class AuthService {
               ? snapshot.data.email == 'admin@maligai.com' &&
                       snapshot.data.uid == 'zKneFULSMyg54psRm6eW3EkBVfA3'
                   ? AdminPage()
-                  : UserHomePage(
-                      user: snapshot.data.photoURL,
-                    )
-              : HomePage();
+                  : Home(user: snapshot.data.photoURL)
+              // : UserHomePage(
+              //     user: snapshot.data.photoURL,
+              //   )
+              : Home();
         });
   }
 
@@ -81,14 +81,14 @@ class AuthService {
         'address': useraddress,
         'phone': userphone,
         'adminverified': false,
-        'referel': [],
+        'ref': userreferal,
         "searchindex": [],
         // setSearchParam(value.user.uid)
       }).whenComplete(() {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => HomePage(),
+            builder: (context) => Login(),
           ),
         );
       });
