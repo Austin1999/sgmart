@@ -190,7 +190,7 @@ class _SignupState extends State<Signup> {
                           ),
                           //Email
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                            padding: const EdgeInsets.fromLTRB(40, 10, 40, 5),
                             child: TextFormField(
                               keyboardType: TextInputType.emailAddress,
                               validator: emailValidator,

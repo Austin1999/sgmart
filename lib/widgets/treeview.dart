@@ -1,4 +1,4 @@
-import 'package:dynamic_treeview/dynamic_treeview.dart';
+import 'package:sgmart/widgets/customtreeview.dart';
 
 class DataModel implements BaseData {
   final int id;

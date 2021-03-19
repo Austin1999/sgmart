@@ -33,7 +33,7 @@ class _AdminPageState extends State<AdminPage> {
               ListTile(
                 title: Text('SignOut'),
                 onTap: () {
-                  AuthService().signOut();
+                  AuthService().signOut(context);
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -128,7 +128,7 @@ class _AdminPageState extends State<AdminPage> {
                                         onPressed: () async {
                                           FirebaseApp tempApp =
                                               await Firebase.initializeApp(
-                                                  name: 'temporaryregite',
+                                                  name: 'temporaryregiter',
                                                   options:
                                                       Firebase.app().options);
                                           UserCredential result =
@@ -162,6 +162,8 @@ class _AdminPageState extends State<AdminPage> {
                                               .then((value) {
                                             return value.get('id');
                                           });
+                                          var id =
+                                              refid.toString() + gen.toString();
                                           await FirebaseFirestore.instance
                                               .collection('Users')
                                               .doc('general')
@@ -173,11 +175,11 @@ class _AdminPageState extends State<AdminPage> {
                                               .doc(data.get('phone'))
                                               .set(
                                             {
+                                              'level': id.length,
                                               'parent': data.get('ref') != null
                                                   ? false
                                                   : true,
-                                              'id': refid.toString() +
-                                                  gen.toString(),
+                                              'id': id,
                                               "searchindex": setSearchParam(
                                                   data.get('phone')),
                                               'adminverified': true

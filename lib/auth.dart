@@ -31,8 +31,11 @@ class AuthService {
   }
 
   //Sign out
-  signOut() async {
-    await FirebaseAuth.instance.signOut();
+  signOut(context) async {
+    await FirebaseAuth.instance.signOut().whenComplete(() {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => handleAuth()));
+    });
     _user = FirebaseAuth.instance.currentUser;
   }
 
@@ -44,24 +47,15 @@ class AuthService {
           .get()
           .then((value) async {
         if (value.get('adminverified')) {
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-              email: username, password: userpassword);
+          await FirebaseAuth.instance
+              .signInWithEmailAndPassword(
+                  email: username, password: userpassword)
+              .then((value) => Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => Home(user: value.user.photoURL))));
           await FirebaseAuth.instance.currentUser
               .updateProfile(photoURL: phone);
-          //   .then((value) async {
-          // Navigator.pop(context);
-          // await FirebaseAuth.instance.currentUser
-          //     .updateProfile(photoURL: phone);
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => value.user.email == 'admin@maligai.com'
-          //         ? AdminPage()
-          //         : HomePage(),
-          //   ),
-          // );
-          // _user = value.user;
-          // });
         } else {
           _buildErrorDialog(context, 'Admin Verification is under process');
         }

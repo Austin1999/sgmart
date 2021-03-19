@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
 
-Color kPrimaryColor = Colors.green[600];
+Color kPrimaryColor = Colors.lightGreen[700];
 
 enum Option { LogIn, SignUp }

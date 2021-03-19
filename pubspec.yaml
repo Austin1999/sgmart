@@ -30,6 +30,9 @@ dependencies:
   firebase: ^7.3.2
   ant_icons: ^1.0.0
   dynamic_treeview: ^1.0.0+2
+  flutter_treeview: ^0.8.0+1
+  google_fonts: ^1.1.0
+  html: ^0.15.0
 
 
   # The following adds the Cupertino Icons font to your application.

@@ -1,14 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dynamic_treeview/dynamic_treeview.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:dynamic_treeview/dynamic_treeview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sgmart/auth.dart';
-import 'package:sgmart/login&signin/login.dart';
-import 'package:sgmart/main.dart';
 import 'package:flutter_share_me/flutter_share_me.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sgmart/constants.dart';
+import 'package:sgmart/widgets/customtreeview.dart';
 import 'package:sgmart/widgets/treeview.dart';
 
 class UserHomePage extends StatefulWidget {
@@ -57,126 +54,146 @@ class _UserHomePageState extends State<UserHomePage> {
                         height: size.height * 0.85,
                         width: size.width * 0.6,
                         child: Card(
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    CircleAvatar(
-                                      backgroundColor: kPrimaryColor,
-                                      child: Text(
-                                          data
-                                              .get('name')
-                                              .toString()
-                                              .substring(0, 1),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline6
-                                              .copyWith(color: Colors.white)),
-                                    ),
-                                    Text(
-                                      '${data.get('name')} \n ${data.get('address')}',
-                                    ),
-                                    Text('₹0 \nPaid to you'),
-                                    Text(
-                                        '${data.get('phone')} \n your referal id'),
-                                    kIsWeb
-                                        ? IconButton(
-                                            icon: Icon(Icons.copy),
-                                            onPressed: () {
-                                              Clipboard.setData(
-                                                new ClipboardData(
-                                                    text: data.get('phone')),
-                                              ).then((result) {
-                                                final snackBar = SnackBar(
-                                                  content: Text(
-                                                      'Copied to Clipboard'),
-                                                  action: SnackBarAction(
-                                                    label: 'Undo',
-                                                    textColor: Colors.yellow,
-                                                    onPressed: () {},
-                                                  ),
-                                                );
-                                                _scaffoldKey.currentState
-                                                    .showSnackBar(snackBar);
-                                              });
-                                            },
-                                          )
-                                        : IconButton(
-                                            icon: Icon(Icons.share),
-                                            onPressed: () {
-                                              FlutterShareMe().shareToSystem(
-                                                  msg: data.get('phone'));
-                                            },
-                                          )
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Text(
-                                  'Your Referals',
-                                  style: Theme.of(context).textTheme.headline5,
-                                ),
-                              ),
-                              FutureBuilder(
-                                future: FirebaseFirestore.instance
-                                    .collection('Users')
-                                    .where('id',
-                                        isGreaterThanOrEqualTo:
-                                            '${snapshot.data.get('id')}')
-                                    .where('id',
-                                        isLessThanOrEqualTo:
-                                            '${snapshot.data.get('id')}~')
-                                    // .orderBy('level')
-                                    // .where('parent', isEqualTo: false)
-                                    .get(),
-                                builder: (context, snapshot1) {
-                                  if (!snapshot1.hasData) {
-                                    return Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  } else {
-                                    // return ListView.builder(
-                                    //   shrinkWrap: true,
-                                    //   itemCount: snapshot1.data.docs.length,
-                                    //   itemBuilder: (context, index) {
-                                    //     return ListTile(
-                                    //       title: Text(
-                                    //           '${index + 1} . ${snapshot1.data.docs[index].get('name')}'),
-                                    //     );
-                                    //   },
-                                    // );
-                                    return DynamicTreeView(
-                                      data: List<BaseData>.generate(
-                                        snapshot1.data.docs.length,
-                                        (index1) {
-                                          var data1 =
-                                              snapshot1.data.docs[index1];
-                                          return DataModel(
-                                            id: int.parse(
-                                                  data1.get('level'),
-                                                ) +
-                                                1,
-                                            name: data1.get('name'),
-                                            parentId:
-                                                int.parse(data1.get('level')) ==
-                                                        0
-                                                    ? -1
-                                                    : int.parse(
-                                                        data1.get('level'),
-                                                      ),
-                                          );
-                                        },
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundColor: kPrimaryColor,
+                                        child: Text(
+                                            data
+                                                .get('name')
+                                                .toString()
+                                                .substring(0, 1),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline6
+                                                .copyWith(color: Colors.white)),
                                       ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ],
+                                      Text(
+                                        '${data.get('name')} \n ${data.get('address')}',
+                                      ),
+                                      Text('₹0 \nPaid to you'),
+                                      Text(
+                                          '${data.get('phone')} \n your referal id'),
+                                      kIsWeb
+                                          ? IconButton(
+                                              icon: Icon(Icons.copy),
+                                              onPressed: () {
+                                                Clipboard.setData(
+                                                  new ClipboardData(
+                                                      text: data.get('phone')),
+                                                ).then((result) {
+                                                  final snackBar = SnackBar(
+                                                    content: Text(
+                                                        'Copied to Clipboard'),
+                                                    action: SnackBarAction(
+                                                      label: 'Undo',
+                                                      textColor: Colors.yellow,
+                                                      onPressed: () {},
+                                                    ),
+                                                  );
+                                                  _scaffoldKey.currentState
+                                                      .showSnackBar(snackBar);
+                                                });
+                                              },
+                                            )
+                                          : IconButton(
+                                              icon: Icon(Icons.share),
+                                              onPressed: () {
+                                                FlutterShareMe().shareToSystem(
+                                                    msg: data.get('phone'));
+                                              },
+                                            )
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text(
+                                    'Your Referals',
+                                    style:
+                                        Theme.of(context).textTheme.headline5,
+                                  ),
+                                ),
+                                FutureBuilder(
+                                  future: FirebaseFirestore.instance
+                                      .collection('Users')
+                                      .where('id',
+                                          isGreaterThanOrEqualTo:
+                                              '${snapshot.data.get('id')}')
+                                      .where('id',
+                                          isLessThanOrEqualTo:
+                                              '${snapshot.data.get('id')}~')
+                                      // .orderBy('level')
+                                      // .where('parent', isEqualTo: false)
+                                      .get(),
+                                  builder: (context, snapshot1) {
+                                    if (!snapshot1.hasData) {
+                                      return Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    } else {
+                                      // return ListView.builder(
+                                      //   shrinkWrap: true,
+                                      //   itemCount: snapshot1.data.docs.length,
+                                      //   itemBuilder: (context, index) {
+                                      //     return DynamicTreeView(
+                                      //       width: size.width * 0.6,
+                                      //       data: List<BaseData>.generate(
+                                      //         snapshot1.data.docs.length,
+                                      //         (index1) {
+                                      //           var data1 =
+                                      //               snapshot1.data.docs[index];
+                                      //           print(data1.get('name'));
+                                      //           return DataModel(
+                                      //             id: int.parse(
+                                      //                   data1.get('level'),
+                                      //                 ) +
+                                      //                 1,
+                                      //             name: data1.get('name'),
+                                      //             parentId: int.parse(
+                                      //               data1.get('level'),
+                                      //             ),
+                                      //           );
+                                      //         },
+                                      //       ),
+                                      //     );
+                                      //   },
+                                      // );
+                                      return CustomTreeView(
+                                        width: size.width * 0.6,
+                                        data: List<BaseData>.generate(
+                                          snapshot1.data.docs.length,
+                                          (index1) {
+                                            var data1 =
+                                                snapshot1.data.docs[index1];
+                                            print(data1.get('name'));
+                                            return DataModel(
+                                              id: int.parse(
+                                                    data1.get('level'),
+                                                  ) +
+                                                  1,
+                                              name: data1.get('name'),
+                                              parentId: int.parse(
+                                                data1.get('level'),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      );
+                                      //   },
+                                      // );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

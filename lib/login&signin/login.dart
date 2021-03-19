@@ -160,13 +160,23 @@ class _LoginState extends State<Login> {
 
                           //password
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                            padding: const EdgeInsets.fromLTRB(40, 10, 40, 5),
                             child: TextFormField(
+                              obscureText: obscure,
                               validator: pwdValidator,
                               controller: password,
                               decoration: InputDecoration(
                                 hintText: "Enter Password",
-                                icon: Icon(Icons.visibility),
+                                icon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      obscure = !obscure;
+                                    });
+                                  },
+                                  icon: obscure
+                                      ? Icon(Icons.visibility)
+                                      : Icon(Icons.visibility_off),
+                                ),
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20)),
                               ),
@@ -183,7 +193,7 @@ class _LoginState extends State<Login> {
                               child: FloatingActionButton.extended(
                                   backgroundColor: Colors.green,
                                   label: Text(
-                                    "Create account",
+                                    "Sign in",
                                     style: TextStyle(),
                                   ),
                                   onPressed: () async {
