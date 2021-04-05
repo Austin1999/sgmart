@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:sgmart/admin/user_detail.dart';
 import 'package:sgmart/login&signin/login.dart';
 import 'package:sgmart/constants.dart';
 import 'dart:html';
@@ -16,10 +17,12 @@ class AdminPage extends StatefulWidget {
 class _AdminPageState extends State<AdminPage> {
   List<String> name = List();
   List<Widget> pname = List();
+
   Uri url;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   TextEditingController pnamecon = TextEditingController();
   String productname;
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
@@ -27,32 +30,61 @@ class _AdminPageState extends State<AdminPage> {
       child: Scaffold(
         backgroundColor: Colors.blueGrey.shade50,
         key: _scaffoldKey,
+        //sidebar
         drawer: Drawer(
-          child: Column(
-            children: [
-              ListTile(
-                title: Text('SignOut'),
-                onTap: () {
-                  AuthService().signOut(context);
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Login(),
-                    ),
-                  );
-                },
-              ),
-              Divider(
-                thickness: 0.3,
-                color: Colors.black,
-              ),
-            ],
+          child: Container(
+            color: Colors.white,
+            child: Column(
+              children: [
+                Image.asset(
+                  "asset/Sgmart.png",
+                  height: 82,
+                  width: 82,
+                ),
+                ListTile(
+                  title: Text('SignOut'),
+                  onTap: () {
+                    AuthService().signOut(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Login(),
+                      ),
+                    );
+                  },
+                ),
+                Divider(
+                  thickness: 0.3,
+                  color: Colors.black,
+                ),
+                ListTile(
+                  title: Text("User Detail"),
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => User_Detail(),
+                        ));
+                  },
+                ),
+                Divider(
+                  thickness: .3,
+                  color: Colors.black,
+                )
+              ],
+            ),
           ),
         ),
         appBar: AppBar(
+          title: Image.asset(
+            'asset/sgmart.png',
+            height: 82,
+            width: 82,
+          ),
           iconTheme: Theme.of(context).iconTheme.copyWith(color: Colors.black),
           elevation: 0.0,
-          backgroundColor: Colors.blueGrey.shade50,
+          // backgroundColor: Colors.blueGrey.shade50,
+          backgroundColor: Colors.white,
         ),
         body: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -69,6 +101,7 @@ class _AdminPageState extends State<AdminPage> {
               } else {
                 return Row(
                   children: [
+                    //Left side contanier
                     Container(
                       height: size.height * 0.85,
                       width: size.width * 0.6,
@@ -79,6 +112,7 @@ class _AdminPageState extends State<AdminPage> {
                               padding: const EdgeInsets.all(8.0),
                               child: Row(
                                 children: [
+                                  //Admin frame
                                   CircleAvatar(
                                     child: Text('A',
                                         style: Theme.of(context)
@@ -86,6 +120,7 @@ class _AdminPageState extends State<AdminPage> {
                                             .headline6
                                             .copyWith(color: Colors.white)),
                                   ),
+                                  //Admin Name
                                   Padding(
                                     padding: const EdgeInsets.only(left: 12.0),
                                     child: Text(
@@ -93,6 +128,7 @@ class _AdminPageState extends State<AdminPage> {
                                     ),
                                   ),
                                   Spacer(),
+                                  //Total user
                                   RichText(
                                     text: TextSpan(
                                         text: 'Total Users : ',
@@ -109,6 +145,7 @@ class _AdminPageState extends State<AdminPage> {
                                 ],
                               ),
                             ),
+                            //unverified user
                             Padding(
                               padding: const EdgeInsets.all(12.0),
                               child: Text(
@@ -116,6 +153,7 @@ class _AdminPageState extends State<AdminPage> {
                                 style: Theme.of(context).textTheme.headline5,
                               ),
                             ),
+                            //waitting for approval pannel
                             ListView.builder(
                               shrinkWrap: true,
                               itemCount: snapshot.data.docs.length,
@@ -125,71 +163,7 @@ class _AdminPageState extends State<AdminPage> {
                                   children: [
                                     ListTile(
                                       trailing: RaisedButton(
-                                        onPressed: () async {
-                                          FirebaseApp tempApp =
-                                              await Firebase.initializeApp(
-                                                  name: 'temporaryregiter',
-                                                  options:
-                                                      Firebase.app().options);
-                                          UserCredential result =
-                                              await FirebaseAuth.instanceFor(
-                                                      app: tempApp)
-                                                  .createUserWithEmailAndPassword(
-                                                      email: data.get('email'),
-                                                      password:
-                                                          data.get('password'))
-                                                  .whenComplete(() => {
-                                                        FirebaseAuth.instance
-                                                            .currentUser
-                                                            .updateProfile(
-                                                                photoURL:
-                                                                    data.get(
-                                                                        'phone'))
-                                                      });
-                                          var gen = await FirebaseFirestore
-                                              .instance
-                                              .collection('Users')
-                                              .doc('general')
-                                              .get()
-                                              .then((value) {
-                                            return value.get('id') + 1;
-                                          });
-                                          var refid = await FirebaseFirestore
-                                              .instance
-                                              .collection('Users')
-                                              .doc(data.get('ref'))
-                                              .get()
-                                              .then((value) {
-                                            return value.get('id');
-                                          });
-                                          var id =
-                                              refid.toString() + gen.toString();
-                                          await FirebaseFirestore.instance
-                                              .collection('Users')
-                                              .doc('general')
-                                              .update({
-                                            'id': FieldValue.increment(1)
-                                          });
-                                          FirebaseFirestore.instance
-                                              .collection('Users')
-                                              .doc(data.get('phone'))
-                                              .set(
-                                            {
-                                              'level': id.length,
-                                              'parent': data.get('ref') != null
-                                                  ? false
-                                                  : true,
-                                              'id': id,
-                                              "searchindex": setSearchParam(
-                                                  data.get('phone')),
-                                              'adminverified': true
-                                            },
-                                            SetOptions(merge: true),
-                                          );
-                                          tempApp.delete();
-                                          print(FirebaseAuth
-                                              .instance.currentUser.photoURL);
-                                        },
+                                        onPressed: () async {},
                                         color: kPrimaryColor,
                                         child: Text(
                                           'Approve',
@@ -210,6 +184,7 @@ class _AdminPageState extends State<AdminPage> {
                         ),
                       ),
                     ),
+                    //product list in right side
                     Padding(
                       padding: const EdgeInsets.only(left: 12.0),
                       child: Container(
@@ -220,6 +195,7 @@ class _AdminPageState extends State<AdminPage> {
                               padding: const EdgeInsets.all(8.0),
                               child: Column(
                                 children: [
+                                  //your Product
                                   Container(
                                     height: size.height * 0.35,
                                     width: double.infinity,
@@ -282,6 +258,7 @@ class _AdminPageState extends State<AdminPage> {
                                       ),
                                     ),
                                   ),
+                                  //Today deal
                                   Container(
                                       height: size.height * 0.35,
                                       width: double.infinity,
@@ -360,17 +337,9 @@ class _AdminPageState extends State<AdminPage> {
       ),
     );
   }
+// User approval
 
-  setSearchParam(String refid) {
-    List<String> caseSearchList = List();
-    String temp = "";
-    for (int i = 0; i < refid.length; i++) {
-      temp = temp + refid[i];
-      caseSearchList.add(temp);
-    }
-    return caseSearchList;
-  }
-
+//edit
   onpressed(title, dname) {
     showDialog(
         context: context,
@@ -413,6 +382,7 @@ class _AdminPageState extends State<AdminPage> {
                             ),
                           ),
                         ),
+                        //Image
                         Stack(
                           children: [
                             Container(
@@ -430,6 +400,7 @@ class _AdminPageState extends State<AdminPage> {
                             ),
                           ],
                         ),
+                        //Edit symbol
                         IconButton(
                             icon: Icon(Icons.edit),
                             onPressed: () => uploadToStorage(
@@ -536,6 +507,7 @@ class _AdminPageState extends State<AdminPage> {
         });
   }
 
+//update
   updated(StateSetter updateState) {
     updateState(() {
       pname.add(
@@ -564,12 +536,14 @@ class _AdminPageState extends State<AdminPage> {
     });
   }
 
+// plus icon pressed
   deleted(StateSetter updateState, index) {
     updateState(() {
       pname.removeAt(index);
     });
   }
 
+// Product image
   void uploadImage({@required Function(File file) onSelected}) {
     InputElement uploadInput = FileUploadInputElement();
     uploadInput.click();
@@ -584,6 +558,7 @@ class _AdminPageState extends State<AdminPage> {
     });
   }
 
+// call inside onpressed
   void uploadToStorage({pathName, fileName, StateSetter updateState}) {
     final path = '$pathName/$fileName';
     uploadImage(onSelected: (file) {
@@ -607,6 +582,7 @@ class _AdminPageState extends State<AdminPage> {
     });
   }
 
+//View button both product and today deal
   view(dname, title) {
     showDialog(
       context: context,

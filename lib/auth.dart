@@ -18,15 +18,7 @@ class AuthService {
     return StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (BuildContext context, AsyncSnapshot<User> snapshot) {
-          return snapshot.hasData
-              ? snapshot.data.email == 'admin@maligai.com' &&
-                      snapshot.data.uid == 'zKneFULSMyg54psRm6eW3EkBVfA3'
-                  ? AdminPage()
-                  : Home(user: snapshot.data.photoURL)
-              // : UserHomePage(
-              //     user: snapshot.data.photoURL,
-              //   )
-              : Home();
+          return snapshot.hasData ? Home(user: snapshot.data) : Home();
         });
   }
 
@@ -39,71 +31,83 @@ class AuthService {
     _user = FirebaseAuth.instance.currentUser;
   }
 
-  signIn(username, userpassword, context, {phone}) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(phone)
-          .get()
-          .then((value) async {
-        if (value.get('adminverified')) {
-          await FirebaseAuth.instance
-              .signInWithEmailAndPassword(
-                  email: username, password: userpassword)
-              .then((value) => Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => Home(user: value.user.photoURL))));
-          await FirebaseAuth.instance.currentUser
-              .updateProfile(photoURL: phone);
-        } else {
-          _buildErrorDialog(context, 'Admin Verification is under process');
-        }
-      });
-    } on FirebaseAuthException catch (e) {
-      _buildErrorDialog(context, e.message);
-    }
-  }
+//   signin(username, code, context, {phone}) async {
+//     FirebaseAuth auth = FirebaseAuth.instance;
+
+// // Wait for the user to complete the reCAPTCHA & for a SMS code to be sent.
+//     await auth
+//         .signInWithPhoneNumber(
+//             phone,
+//             RecaptchaVerifier(
+//               container: 'recaptcha',
+//               size: RecaptchaVerifierSize.compact,
+//               theme: RecaptchaVerifierTheme.dark,
+//             ))
+//         .then((value) => confirm(code, value));
+//   }
+
+//   confirm(code, confirmationResult) async {
+//     UserCredential userCredential = await confirmationResult.confirm(code);
+//   }
+  // signIn(username, userpassword, context, {phone}) async {
+  //   try {
+  //     await FirebaseFirestore.instance
+  //         .collection('Users')
+  //         .doc(phone)
+  //         .get()
+  //         .then((value) async {
+  //       await FirebaseAuth.instance
+  //           .signInWithEmailAndPassword(email: username, password: userpassword)
+  //           .then((value) async {
+  //         await value.user.updateProfile(photoURL: phone);
+  //         value.user.reload();
+  //         Navigator.pushReplacement(
+  //           context,
+  //           MaterialPageRoute(
+  //             builder: (context) => Home(user: value.user),
+  //           ),
+  //         );
+  //       });
+  //       await FirebaseAuth.instance.currentUser.updateProfile(photoURL: phone);
+  //     });
+  //   } on FirebaseAuthException catch (e) {
+  //     _buildErrorDialog(context, e.message);
+  //   }
+  // }
 
   signUp(username, userpassword, useremail, userphone, useraddress, context,
       {userreferal}) async {
     try {
-      await FirebaseFirestore.instance.collection('Users').doc(userphone).set({
-        'name': username,
-        'email': useremail,
-        'password': userpassword,
-        'address': useraddress,
-        'phone': userphone,
-        'adminverified': false,
-        'ref': userreferal,
-        "searchindex": [],
-        // setSearchParam(value.user.uid)
-      }).whenComplete(() {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => Login(),
-          ),
-        );
+      FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+              email: useremail, password: userpassword)
+          .then((value) async {
+        var refid = await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(userreferal)
+            .get()
+            .then(
+              (value) => value.get('id'),
+            );
+        print(refid);
+        var id = refid.toString() + userphone.toString();
+        var len = id.length;
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(userphone)
+            .set({
+          'name': username,
+          'email': useremail,
+          'password': userpassword,
+          'address': useraddress,
+          'phone': userphone,
+          'ref': userreferal,
+          'level': len / 10,
+          'id': id,
+          'personalVolume': 0,
+          "searchindex": setSearchParam(userphone),
+        });
       });
-      // await value.user.updateProfile(photoURL: userphone);
-      // _user = value.user;
-      userreferal != null ??
-          await FirebaseFirestore.instance
-              .collection('Users')
-              .doc(userreferal)
-              .set(
-            {
-              'referel': FieldValue.arrayUnion([username])
-            },
-            SetOptions(merge: true),
-          );
-      await FirebaseFirestore.instance.collection('Users').doc('phone').set(
-        {
-          'numbers': FieldValue.arrayUnion([userphone])
-        },
-        SetOptions(merge: true),
-      );
       // Navigator.pushReplacement(
       //   context,
       //   MaterialPageRoute(
@@ -133,5 +137,15 @@ class AuthService {
         );
       },
     );
+  }
+
+  setSearchParam(String refid) {
+    List<String> caseSearchList = [];
+    String temp = "";
+    for (int i = 0; i < refid.length; i++) {
+      temp = temp + refid[i];
+      caseSearchList.add(temp);
+    }
+    return caseSearchList;
   }
 }

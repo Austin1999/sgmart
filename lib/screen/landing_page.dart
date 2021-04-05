@@ -11,7 +11,7 @@ import 'package:sgmart/screen/pages/promotion.dart';
 import 'package:sgmart/constants.dart';
 
 class Home extends StatefulWidget {
-  final user;
+  User user;
   Home({this.user});
   @override
   _HomeState createState() => _HomeState();
@@ -153,7 +153,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         body: TabBarView(controller: _tabController, children: [
           ShopHome(),
           About(),
-          // Promotion(),
           FirebaseAuth.instance.currentUser == null
               ? Center(
                   child: TextButton(
@@ -173,7 +172,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 )
               : UserHomePage(
                   user: widget.user,
-                )
+                ),
+          // Promotion(),
         ]));
   }
 }

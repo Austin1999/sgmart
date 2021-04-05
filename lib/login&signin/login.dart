@@ -1,6 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sgmart/constants.dart';
-import '../auth.dart';
 import 'new_account.dart';
 
 class Login extends StatefulWidget {
@@ -10,10 +10,12 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   GlobalKey<FormState> formkey = GlobalKey();
-  TextEditingController email = TextEditingController();
-  TextEditingController password = TextEditingController();
-  TextEditingController phone = TextEditingController();
+  TextEditingController phone = TextEditingController(text: '+91');
+  TextEditingController otp = TextEditingController();
   bool obscure = true;
+  bool codesent = false;
+  bool isLoading = true;
+  ConfirmationResult value;
 
   String emailValidator(String value) {
     Pattern pattern =
@@ -127,25 +129,24 @@ class _LoginState extends State<Login> {
                             ),
                           ),
                           //Email
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
-                            child: TextFormField(
-                              keyboardType: TextInputType.emailAddress,
-                              validator: emailValidator,
-                              controller: email,
-                              decoration: InputDecoration(
-                                  hintText: "Enter Email id",
-                                  icon: Icon(Icons.email_outlined),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  )),
-                            ),
-                          ),
+                          // Padding(
+                          //   padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                          //   child: TextFormField(
+                          //     keyboardType: TextInputType.emailAddress,
+                          //     validator: emailValidator,
+                          //     controller: email,
+                          //     decoration: InputDecoration(
+                          //         hintText: "Enter Email id",
+                          //         icon: Icon(Icons.email_outlined),
+                          //         border: OutlineInputBorder(
+                          //           borderRadius: BorderRadius.circular(20),
+                          //         )),
+                          //   ),
+                          // ),
                           //Phone
                           Padding(
                             padding: const EdgeInsets.fromLTRB(40, 25, 40, 10),
                             child: TextFormField(
-                              maxLength: 10,
                               keyboardType: TextInputType.phone,
                               validator: phoneValidator,
                               controller: phone,
@@ -157,35 +158,38 @@ class _LoginState extends State<Login> {
                                   )),
                             ),
                           ),
-
-                          //password
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(40, 10, 40, 5),
-                            child: TextFormField(
-                              obscureText: obscure,
-                              validator: pwdValidator,
-                              controller: password,
-                              decoration: InputDecoration(
-                                hintText: "Enter Password",
-                                icon: IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      obscure = !obscure;
-                                    });
-                                  },
-                                  icon: obscure
-                                      ? Icon(Icons.visibility)
-                                      : Icon(Icons.visibility_off),
-                                ),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(20)),
-                              ),
-                            ),
-                          ),
                           SizedBox(
                             height: size.height * 0.02,
                           ),
-                          //Button
+                          codesent
+                              ? Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(40, 10, 40, 5),
+                                  child: TextFormField(
+                                    obscureText: obscure,
+                                    controller: otp,
+                                    decoration: InputDecoration(
+                                      hintText: "Enter OTP",
+                                      icon: IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            obscure = !obscure;
+                                          });
+                                        },
+                                        icon: obscure
+                                            ? Icon(Icons.visibility)
+                                            : Icon(Icons.visibility_off),
+                                      ),
+                                      border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20)),
+                                    ),
+                                  ),
+                                )
+                              : Container(),
+                          SizedBox(
+                            height: size.height * 0.02,
+                          ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
                             child: Container(
@@ -193,34 +197,85 @@ class _LoginState extends State<Login> {
                               child: FloatingActionButton.extended(
                                   backgroundColor: Colors.green,
                                   label: Text(
-                                    "Sign in",
+                                    codesent ? "Verify OTP" : "Send OTP",
                                     style: TextStyle(),
                                   ),
                                   onPressed: () async {
+                                    isLoading
+                                        ? showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                content: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: [
+                                                    Text('Loading...'),
+                                                    CircularProgressIndicator()
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : null;
+                                    print(codesent);
                                     formkey.currentState.save();
                                     if (formkey.currentState.validate()) {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            content: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: [
-                                                Text('Loading...'),
-                                                CircularProgressIndicator()
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      );
-                                      await AuthService().signIn(
-                                          email.text, password.text, context,
-                                          phone: phone.text);
+                                      codesent
+                                          ? value.confirm(otp.text)
+                                          : await FirebaseAuth.instance
+                                              .signInWithPhoneNumber(
+                                              phone.text,
+                                            )
+                                              .then((value) {
+                                              setState(() {
+                                                codesent = true;
+                                                value = value;
+                                                isLoading = false;
+                                              });
+                                              print(value);
+                                            });
                                     }
                                   }),
                             ),
                           ),
+                          //password
+
+                          //Button
+                          // Padding(
+                          //   padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                          //   child: Container(
+                          //     width: double.infinity,
+                          //     child: FloatingActionButton.extended(
+                          //         backgroundColor: Colors.green,
+                          //         label: Text(
+                          //           "Sign in",
+                          //           style: TextStyle(),
+                          //         ),
+                          //         onPressed: () async {
+                          //           formkey.currentState.save();
+                          //           if (formkey.currentState.validate()) {
+                          //             // showDialog(
+                          //             //   context: context,
+                          //             //   builder: (context) {
+                          //             //     return AlertDialog(
+                          //             //       content: Row(
+                          //             //         mainAxisAlignment:
+                          //             //             MainAxisAlignment.spaceEvenly,
+                          //             //         children: [
+                          //             //           Text('Loading...'),
+                          //             //           CircularProgressIndicator()
+                          //             //         ],
+                          //             //       ),
+                          //             //     );
+                          //             //   },
+                          //             // );
+                          //             // confirm(otp.text);
+                          //           }
+                          //         }),
+                          //   ),
+                          // ),
                           //Login page
                           Padding(
                             padding: const EdgeInsets.all(25),
@@ -294,21 +349,6 @@ class _LoginState extends State<Login> {
                           thickness: 2,
                         ),
                       ),
-                      //Email
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
-                        child: TextFormField(
-                          keyboardType: TextInputType.emailAddress,
-                          validator: emailValidator,
-                          controller: email,
-                          decoration: InputDecoration(
-                              hintText: "Enter Email id",
-                              icon: Icon(Icons.email_outlined),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              )),
-                        ),
-                      ),
                       //Phone
                       Padding(
                         padding: const EdgeInsets.fromLTRB(40, 25, 40, 10),
@@ -323,21 +363,6 @@ class _LoginState extends State<Login> {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                               )),
-                        ),
-                      ),
-
-                      //password
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
-                        child: TextFormField(
-                          validator: pwdValidator,
-                          controller: password,
-                          decoration: InputDecoration(
-                            hintText: "Enter Password",
-                            icon: Icon(Icons.visibility),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20)),
-                          ),
                         ),
                       ),
 
@@ -380,6 +405,7 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                       ),
+
                       //Login page
                       Padding(
                         padding: const EdgeInsets.all(12.0),
@@ -420,6 +446,11 @@ class _LoginState extends State<Login> {
             ),
     );
   }
+
+  // confirm(code) async {
+  //   UserCredential userCredential = await confirmationResult.confirm(code);
+  //   // FirebaseAuth.instance.signInWithCredential(userCredential);
+  // }
 }
 
 // Padding(
