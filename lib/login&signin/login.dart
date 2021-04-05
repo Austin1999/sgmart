@@ -14,7 +14,7 @@ class _LoginState extends State<Login> {
   TextEditingController otp = TextEditingController();
   bool obscure = true;
   bool codesent = false;
-  bool isLoading = true;
+  // bool isLoading = true;
   ConfirmationResult value;
 
   String emailValidator(String value) {
@@ -201,24 +201,24 @@ class _LoginState extends State<Login> {
                                     style: TextStyle(),
                                   ),
                                   onPressed: () async {
-                                    isLoading
-                                        ? showDialog(
-                                            context: context,
-                                            builder: (context) {
-                                              return AlertDialog(
-                                                content: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceEvenly,
-                                                  children: [
-                                                    Text('Loading...'),
-                                                    CircularProgressIndicator()
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                          )
-                                        : null;
+                                    // isLoading
+                                    //     ? showDialog(
+                                    //         context: context,
+                                    //         builder: (context) {
+                                    //           return AlertDialog(
+                                    //             content: Row(
+                                    //               mainAxisAlignment:
+                                    //                   MainAxisAlignment
+                                    //                       .spaceEvenly,
+                                    //               children: [
+                                    //                 Text('Loading...'),
+                                    //                 CircularProgressIndicator()
+                                    //               ],
+                                    //             ),
+                                    //           );
+                                    //         },
+                                    //       )
+                                    //     : null;
                                     print(codesent);
                                     formkey.currentState.save();
                                     if (formkey.currentState.validate()) {
@@ -232,7 +232,7 @@ class _LoginState extends State<Login> {
                                               setState(() {
                                                 codesent = true;
                                                 value = value;
-                                                isLoading = false;
+                                                // isLoading = false;
                                               });
                                               print(value);
                                             });
