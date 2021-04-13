@@ -1,7 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sgmart/constants.dart';
-import 'new_account.dart';
+import 'package:sgmart/screen/landing_page.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -12,10 +13,17 @@ class _LoginState extends State<Login> {
   GlobalKey<FormState> formkey = GlobalKey();
   TextEditingController phone = TextEditingController(text: '+91');
   TextEditingController otp = TextEditingController();
+  TextEditingController referal = TextEditingController();
+  TextEditingController referalphone = TextEditingController();
+  int ref;
+  TextEditingController name = TextEditingController();
+  TextEditingController address = TextEditingController();
+  bool show = false;
   bool obscure = true;
   bool codesent = false;
-  // bool isLoading = true;
-  ConfirmationResult value;
+  bool isLoading = true;
+  bool phoneexists = false;
+  ConfirmationResult result;
 
   String emailValidator(String value) {
     Pattern pattern =
@@ -37,8 +45,10 @@ class _LoginState extends State<Login> {
   }
 
   String phoneValidator(String value) {
-    if (value.length < 8) {
-      return 'Password must be longer than 8 characters';
+    Pattern pattern = r'^(\+\d{1,2})?\d{10}$';
+    RegExp regex = new RegExp(pattern);
+    if (!regex.hasMatch(value)) {
+      return 'Please enter valid 10 Digt Number Phone Number';
     } else {
       return null;
     }
@@ -128,25 +138,41 @@ class _LoginState extends State<Login> {
                                   color: Colors.black54, fontSize: 20),
                             ),
                           ),
-                          //Email
-                          // Padding(
-                          //   padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
-                          //   child: TextFormField(
-                          //     keyboardType: TextInputType.emailAddress,
-                          //     validator: emailValidator,
-                          //     controller: email,
-                          //     decoration: InputDecoration(
-                          //         hintText: "Enter Email id",
-                          //         icon: Icon(Icons.email_outlined),
-                          //         border: OutlineInputBorder(
-                          //           borderRadius: BorderRadius.circular(20),
-                          //         )),
-                          //   ),
-                          // ),
+
                           //Phone
                           Padding(
                             padding: const EdgeInsets.fromLTRB(40, 25, 40, 10),
                             child: TextFormField(
+                              onChanged: (value) async {
+                                if (value.length == 13) {
+                                  await FirebaseFirestore.instance
+                                      .collection('Users')
+                                      .doc('phone')
+                                      .get()
+                                      .then(
+                                    (value) {
+                                      List userphone = value.get('userphone');
+                                      for (var e in userphone) {
+                                        if (e == phone.text.trim()) {
+                                          print('Phone Exists $e');
+                                          setState(() {
+                                            phoneexists = true;
+                                          });
+                                          print(phoneexists);
+                                          break;
+                                        } else {
+                                          setState(() {
+                                            phoneexists = false;
+                                            print(phoneexists);
+                                          });
+                                        }
+                                      }
+                                    },
+                                  );
+                                }
+                              },
+                              autovalidate:
+                                  phone.text.length >= 13 ? true : false,
                               keyboardType: TextInputType.phone,
                               validator: phoneValidator,
                               controller: phone,
@@ -161,6 +187,137 @@ class _LoginState extends State<Login> {
                           SizedBox(
                             height: size.height * 0.02,
                           ),
+
+                          SizedBox(
+                            height: size.height * 0.02,
+                          ),
+                          //referal
+                          phoneexists
+                              ? Text(
+                                  'Welcome back!',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .button
+                                      .copyWith(color: Colors.grey),
+                                )
+                              : Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                                  child: TextFormField(
+                                    onTap: () {
+                                      setState(() {
+                                        show = true;
+                                      });
+                                    },
+                                    onChanged: (value) {
+                                      setState(() {});
+                                    },
+                                    validator: (value) => value.isEmpty
+                                        ? 'Referal Field Must not be Empty'
+                                        : null,
+                                    controller: referalphone,
+                                    decoration: InputDecoration(
+                                      hintText: "Referal",
+                                      icon: Icon(Icons.person_add_alt),
+                                      border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20)),
+                                    ),
+                                  ),
+                                ),
+                          show
+                              ? StreamBuilder<QuerySnapshot>(
+                                  stream: (referalphone.text == null ||
+                                          referalphone.text.trim() == '')
+                                      ? FirebaseFirestore.instance
+                                          .collection('Users')
+                                          .limit(2)
+                                          .snapshots()
+                                      : FirebaseFirestore.instance
+                                          .collection('Users')
+                                          .where('searchindex',
+                                              arrayContains: referalphone.text)
+                                          .limit(2)
+                                          .snapshots(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasError) {
+                                      print(snapshot.error);
+                                      return Text(
+                                          'We run into an error ${snapshot.error}');
+                                    }
+                                    switch (snapshot.connectionState) {
+                                      case ConnectionState.waiting:
+                                        return Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      case ConnectionState.none:
+                                        return Text('Oops no data present');
+                                      case ConnectionState.done:
+                                        return Text('We are done');
+                                      default:
+                                        return ListView(
+                                          shrinkWrap: true,
+                                          children: snapshot.data.docs
+                                              .map((DocumentSnapshot document) {
+                                            return ListTile(
+                                              onTap: () {
+                                                setState(() {
+                                                  show = false;
+                                                  referal.text = document['id'];
+                                                  ref = document['personalid'];
+                                                  referalphone.text =
+                                                      document['phone'];
+                                                });
+                                              },
+                                              title: Text(
+                                                document['phone'],
+                                              ),
+                                            );
+                                          }).toList(),
+                                        );
+                                    }
+                                  },
+                                )
+                              : Container(),
+                          phoneexists
+                              ? Container()
+                              : Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                                  child: TextFormField(
+                                    validator: (val) => val.isEmpty
+                                        ? 'Name Field Must not be Empty'
+                                        : null,
+                                    controller: name,
+                                    decoration: InputDecoration(
+                                        hintText: "Name",
+                                        icon: Icon(Icons.person),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        )),
+                                  ),
+                                ),
+                          phoneexists
+                              ? Container()
+                              : Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                                  child: TextFormField(
+                                    keyboardType: TextInputType.streetAddress,
+                                    validator: (val) => val.isEmpty
+                                        ? 'Address Field Must not be Empty'
+                                        : null,
+                                    controller: address,
+                                    decoration: InputDecoration(
+                                      hintText: "Enter Address",
+                                      icon: Icon(Icons.location_on),
+                                      border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20)),
+                                    ),
+                                  ),
+                                ),
                           codesent
                               ? Padding(
                                   padding:
@@ -169,8 +326,7 @@ class _LoginState extends State<Login> {
                                     obscureText: obscure,
                                     controller: otp,
                                     decoration: InputDecoration(
-                                      hintText: "Enter OTP",
-                                      icon: IconButton(
+                                      suffixIcon: IconButton(
                                         onPressed: () {
                                           setState(() {
                                             obscure = !obscure;
@@ -180,6 +336,8 @@ class _LoginState extends State<Login> {
                                             ? Icon(Icons.visibility)
                                             : Icon(Icons.visibility_off),
                                       ),
+                                      hintText: "Enter OTP",
+                                      icon: Icon(Icons.lock_outlined),
                                       border: OutlineInputBorder(
                                           borderRadius:
                                               BorderRadius.circular(20)),
@@ -187,9 +345,6 @@ class _LoginState extends State<Login> {
                                   ),
                                 )
                               : Container(),
-                          SizedBox(
-                            height: size.height * 0.02,
-                          ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
                             child: Container(
@@ -201,114 +356,132 @@ class _LoginState extends State<Login> {
                                     style: TextStyle(),
                                   ),
                                   onPressed: () async {
-                                    // isLoading
-                                    //     ? showDialog(
-                                    //         context: context,
-                                    //         builder: (context) {
-                                    //           return AlertDialog(
-                                    //             content: Row(
-                                    //               mainAxisAlignment:
-                                    //                   MainAxisAlignment
-                                    //                       .spaceEvenly,
-                                    //               children: [
-                                    //                 Text('Loading...'),
-                                    //                 CircularProgressIndicator()
-                                    //               ],
-                                    //             ),
-                                    //           );
-                                    //         },
-                                    //       )
-                                    //     : null;
+                                    var resvalue;
                                     print(codesent);
                                     formkey.currentState.save();
                                     if (formkey.currentState.validate()) {
-                                      codesent
-                                          ? value.confirm(otp.text)
-                                          : await FirebaseAuth.instance
+                                      print(resvalue);
+                                      try {
+                                        if (!codesent) {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                content: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: [
+                                                    Text('Loading...'),
+                                                    CircularProgressIndicator()
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          );
+
+                                          result = await FirebaseAuth.instance
                                               .signInWithPhoneNumber(
-                                              phone.text,
-                                            )
+                                            phone.text,
+                                          )
                                               .then((value) {
-                                              setState(() {
-                                                codesent = true;
-                                                value = value;
-                                                // isLoading = false;
-                                              });
-                                              print(value);
+                                            setState(() {
+                                              codesent = true;
+                                              resvalue = value;
                                             });
+                                            Navigator.pop(context);
+                                            return value;
+                                          });
+                                        } else {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                content: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: [
+                                                    Text('Loading...'),
+                                                    CircularProgressIndicator()
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          );
+                                          await result
+                                              .confirm(otp.text)
+                                              .then((v) async {
+                                            // await v.user.updateProfile(
+                                            //     photoURL: phone.text);
+                                            // await v.user.reload();
+                                            // print('Referal uid : $ref');
+
+                                            var id = referal.text.toString() +
+                                                phone.text.substring(3);
+                                            var len = id.length;
+                                            if (phoneexists) {
+                                              print('phoneexists');
+                                            } else {
+                                              var userid =
+                                                  await FirebaseFirestore
+                                                      .instance
+                                                      .collection('Users')
+                                                      .doc('phone')
+                                                      .get()
+                                                      .then(
+                                                        (value) =>
+                                                            value.get('user'),
+                                                      );
+                                              print(userid);
+                                              print(v.user.uid);
+                                              await FirebaseFirestore.instance
+                                                  .collection('Users')
+                                                  .doc(v.user.uid)
+                                                  .set({
+                                                'parentid': ref,
+                                                'uid': v.user.uid,
+                                                'phone': phone.text,
+                                                'level': len / 10,
+                                                'id': id,
+                                                'personalVolume': 0,
+                                                'groupVolume': 0,
+                                                'name': name.text,
+                                                'address': address.text,
+                                                'personalid': userid + 1,
+                                                "searchindex":
+                                                    setSearchParam(phone.text),
+                                              }).whenComplete(() =>
+                                                      FirebaseFirestore.instance
+                                                          .collection('Users')
+                                                          .doc('phone')
+                                                          .update({
+                                                        'user': FieldValue
+                                                            .increment(1),
+                                                        'userphone': FieldValue
+                                                            .arrayUnion(
+                                                                [phone.text])
+                                                      }));
+                                              Navigator.pop(context);
+                                              Navigator.pushReplacement(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => Home(
+                                                    phone: phone.text,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          });
+                                        }
+                                      } catch (e) {
+                                        _buildErrorDialog(context, e.message);
+                                      }
                                     }
                                   }),
                             ),
                           ),
                           //password
-
-                          //Button
-                          // Padding(
-                          //   padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
-                          //   child: Container(
-                          //     width: double.infinity,
-                          //     child: FloatingActionButton.extended(
-                          //         backgroundColor: Colors.green,
-                          //         label: Text(
-                          //           "Sign in",
-                          //           style: TextStyle(),
-                          //         ),
-                          //         onPressed: () async {
-                          //           formkey.currentState.save();
-                          //           if (formkey.currentState.validate()) {
-                          //             // showDialog(
-                          //             //   context: context,
-                          //             //   builder: (context) {
-                          //             //     return AlertDialog(
-                          //             //       content: Row(
-                          //             //         mainAxisAlignment:
-                          //             //             MainAxisAlignment.spaceEvenly,
-                          //             //         children: [
-                          //             //           Text('Loading...'),
-                          //             //           CircularProgressIndicator()
-                          //             //         ],
-                          //             //       ),
-                          //             //     );
-                          //             //   },
-                          //             // );
-                          //             // confirm(otp.text);
-                          //           }
-                          //         }),
-                          //   ),
-                          // ),
-                          //Login page
-                          Padding(
-                            padding: const EdgeInsets.all(25),
-                            child: Row(
-                              children: [
-                                Center(
-                                  child: Text(
-                                    "Don't have an Account?",
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 6,
-                                ),
-                                GestureDetector(
-                                  child: Text(
-                                    "Register here",
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontSize: 17,
-                                    ),
-                                  ),
-                                  onTap: () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => Signup(),
-                                        ));
-                                  },
-                                )
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -319,12 +492,6 @@ class _LoginState extends State<Login> {
           :
           //RightSide
           Container(
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                      topRight: Radius.circular(15),
-                      bottomRight: Radius.circular(15))),
-              width: size.width,
               // height: size.height * .80,
               child: SingleChildScrollView(
                 child: Form(
@@ -332,28 +499,52 @@ class _LoginState extends State<Login> {
                   child: Column(
                     children: [
                       //Signup
-                      Padding(
-                          padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
-                          child: Text(
-                            "Signin",
-                            style:
-                                TextStyle(color: Colors.black54, fontSize: 20),
-                          )),
-                      SizedBox(
-                        height: 8,
-                      ),
-                      Container(
-                        width: 30,
-                        child: Divider(
-                          color: kPrimaryColor,
-                          thickness: 2,
+                      Center(
+                        child: Text(
+                          "Signin",
+                          style: TextStyle(color: Colors.black54, fontSize: 20),
                         ),
                       ),
+
                       //Phone
                       Padding(
                         padding: const EdgeInsets.fromLTRB(40, 25, 40, 10),
                         child: TextFormField(
-                          maxLength: 10,
+                          onChanged: (value) async {
+                            if (value.length == 13) {
+                              await FirebaseFirestore.instance
+                                  .collection('Users')
+                                  .doc('phone')
+                                  .get()
+                                  .then(
+                                (value) {
+                                  List userphone = value.get('userphone');
+                                  for (var e in userphone) {
+                                    if (e == phone.text.trim()) {
+                                      print('Phone Exists $e');
+                                      setState(() {
+                                        phoneexists = true;
+                                      });
+                                      print(phoneexists);
+                                      break;
+                                    } else {
+                                      setState(() {
+                                        phoneexists = false;
+                                        print(phoneexists);
+                                      });
+                                    }
+                                  }
+                                  // userphone.forEach((e) {
+
+                                  // });
+                                },
+                              );
+
+                              // print(phoneexists);
+                              // print(phoneexist);
+                              // print(phone.text);
+                            }
+                          },
                           keyboardType: TextInputType.phone,
                           validator: phoneValidator,
                           controller: phone,
@@ -365,80 +556,289 @@ class _LoginState extends State<Login> {
                               )),
                         ),
                       ),
+                      SizedBox(
+                        height: size.height * 0.02,
+                      ),
 
                       SizedBox(
                         height: size.height * 0.02,
                       ),
-                      //Button
+                      //referal
+                      phoneexists
+                          ? Text(
+                              'Welcome back!',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .button
+                                  .copyWith(color: Colors.grey),
+                            )
+                          : Padding(
+                              padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                              child: TextFormField(
+                                onTap: () {
+                                  setState(() {
+                                    show = true;
+                                  });
+                                },
+                                onChanged: (value) {
+                                  setState(() {});
+                                },
+                                controller: referalphone,
+                                decoration: InputDecoration(
+                                  hintText: "Referal",
+                                  icon: Icon(Icons.person_add_alt),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                ),
+                              ),
+                            ),
+                      show
+                          ? StreamBuilder<QuerySnapshot>(
+                              stream: (referalphone.text == null ||
+                                      referalphone.text.trim() == '')
+                                  ? FirebaseFirestore.instance
+                                      .collection('Users')
+                                      .limit(2)
+                                      .snapshots()
+                                  : FirebaseFirestore.instance
+                                      .collection('Users')
+                                      .where('searchindex',
+                                          arrayContains: referalphone.text)
+                                      .limit(2)
+                                      .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasError) {
+                                  print(snapshot.error);
+                                  return Text(
+                                      'We run into an error ${snapshot.error}');
+                                }
+                                switch (snapshot.connectionState) {
+                                  case ConnectionState.waiting:
+                                    return Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  case ConnectionState.none:
+                                    return Text('Oops no data present');
+                                  case ConnectionState.done:
+                                    return Text('We are done');
+                                  default:
+                                    return ListView(
+                                      shrinkWrap: true,
+                                      children: snapshot.data.docs
+                                          .map((DocumentSnapshot document) {
+                                        return ListTile(
+                                          onTap: () {
+                                            setState(() {
+                                              show = false;
+                                              referal.text = document['id'];
+                                              ref = document['personalid'];
+                                              referalphone.text =
+                                                  document['phone'];
+                                            });
+                                          },
+                                          title: Text(
+                                            document['phone'],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    );
+                                }
+                              },
+                            )
+                          : Container(),
+                      phoneexists
+                          ? Container()
+                          : Padding(
+                              padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                              child: TextFormField(
+                                validator: (val) => val.isEmpty
+                                    ? 'Please enter your Name'
+                                    : null,
+                                controller: name,
+                                decoration: InputDecoration(
+                                    hintText: "Name",
+                                    icon: Icon(Icons.person),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    )),
+                              ),
+                            ),
+                      phoneexists
+                          ? Container()
+                          : Padding(
+                              padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
+                              child: TextFormField(
+                                keyboardType: TextInputType.streetAddress,
+                                validator: (val) => val.isEmpty
+                                    ? 'Please enter your Address'
+                                    : null,
+                                controller: address,
+                                decoration: InputDecoration(
+                                  hintText: "Enter Address",
+                                  icon: Icon(Icons.location_on),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                ),
+                              ),
+                            ),
+                      codesent
+                          ? Padding(
+                              padding: const EdgeInsets.fromLTRB(40, 10, 40, 5),
+                              child: TextFormField(
+                                obscureText: obscure,
+                                controller: otp,
+                                decoration: InputDecoration(
+                                  suffixIcon: IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        obscure = !obscure;
+                                      });
+                                    },
+                                    icon: obscure
+                                        ? Icon(Icons.visibility)
+                                        : Icon(Icons.visibility_off),
+                                  ),
+                                  hintText: "Enter OTP",
+                                  icon: Icon(Icons.lock_outlined),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                ),
+                              ),
+                            )
+                          : Container(),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
                         child: Container(
                           width: double.infinity,
                           child: FloatingActionButton.extended(
-                            backgroundColor: Colors.green,
-                            label: Text(
-                              "Create account",
-                              style: TextStyle(),
-                            ),
-                            onPressed: () {
-                              formkey.currentState.save();
-                              if (formkey.currentState.validate()) {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      content: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          Text('Loading...'),
-                                          CircularProgressIndicator(
-                                            backgroundColor: kPrimaryColor,
-                                          )
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ),
+                              backgroundColor: Colors.green,
+                              label: Text(
+                                codesent ? "Verify OTP" : "Send OTP",
+                                style: TextStyle(),
+                              ),
+                              onPressed: () async {
+                                var resvalue;
+                                print(codesent);
+                                formkey.currentState.save();
+                                if (formkey.currentState.validate()) {
+                                  print(resvalue);
+                                  try {
+                                    if (!codesent) {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            content: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                Text('Loading...'),
+                                                CircularProgressIndicator()
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      );
 
-                      //Login page
-                      Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            Center(
-                              child: Text(
-                                "Already have an Account?",
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 6,
-                            ),
-                            GestureDetector(
-                              child: Text(
-                                "Register Here",
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 17,
-                                ),
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => Signup(),
-                                    ));
-                              },
-                            )
-                          ],
+                                      result = await FirebaseAuth.instance
+                                          .signInWithPhoneNumber(
+                                        phone.text,
+                                      )
+                                          .then((value) {
+                                        setState(() {
+                                          codesent = true;
+                                          resvalue = value;
+                                        });
+                                        Navigator.pop(context);
+                                        return value;
+                                      });
+                                    } else {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            content: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                Text('Loading...'),
+                                                CircularProgressIndicator()
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      );
+                                      await result
+                                          .confirm(otp.text)
+                                          .then((v) async {
+                                        // await v.user.updateProfile(
+                                        //     photoURL: phone.text);
+                                        // await v.user.reload();
+                                        // print('Referal uid : $ref');
+
+                                        var id = referal.text.toString() +
+                                            phone.text.substring(3);
+                                        var len = id.length;
+                                        if (phoneexists) {
+                                          print('phoneexists');
+                                        } else {
+                                          var userid = await FirebaseFirestore
+                                              .instance
+                                              .collection('Users')
+                                              .doc('phone')
+                                              .get()
+                                              .then(
+                                                (value) => value.get('user'),
+                                              );
+                                          print(userid);
+                                          print(v.user.uid);
+                                          await FirebaseFirestore.instance
+                                              .collection('Users')
+                                              .doc(v.user.uid)
+                                              .set({
+                                            'parentid': ref,
+                                            'uid': v.user.uid,
+                                            'phone': phone.text,
+                                            'level': len / 10,
+                                            'id': id,
+                                            'personalVolume': 0,
+                                            'groupVolume': 0,
+                                            'name': name.text,
+                                            'address': address.text,
+                                            'personalid': userid + 1,
+                                            "searchindex":
+                                                setSearchParam(phone.text),
+                                          }).whenComplete(() =>
+                                                  FirebaseFirestore.instance
+                                                      .collection('Users')
+                                                      .doc('phone')
+                                                      .update({
+                                                    'user':
+                                                        FieldValue.increment(1),
+                                                    'userphone':
+                                                        FieldValue.arrayUnion(
+                                                            [phone.text])
+                                                  }));
+                                          Navigator.pop(context);
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => Home(
+                                                phone: phone.text,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      });
+                                    }
+                                  } catch (e) {
+                                    _buildErrorDialog(context, e.message);
+                                  }
+                                }
+                              }),
                         ),
                       ),
+                      //password
                     ],
                   ),
                 ),
@@ -447,32 +847,33 @@ class _LoginState extends State<Login> {
     );
   }
 
-  // confirm(code) async {
-  //   UserCredential userCredential = await confirmationResult.confirm(code);
-  //   // FirebaseAuth.instance.signInWithCredential(userCredential);
-  // }
-}
+  Future _buildErrorDialog(BuildContext context, _message) {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Error Message'),
+          content: Text(_message),
+          actions: <Widget>[
+            FlatButton(
+                child: Text('Okay'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                })
+          ],
+        );
+      },
+    );
+  }
 
-// Padding(
-// padding: const EdgeInsets.fromLTRB(200, 25, 40, 20),
-// child: Row(
-// children: [
-// Center(
-// child: Text(
-// "Already have an account?",
-// style: TextStyle(color: Colors.grey),
-// ),
-// ),
-// GestureDetector(
-// onTap: () {
-// Navigator.push(
-// context,
-// MaterialPageRoute(
-// builder: (context) => Login(),
-// ));
-// },
-// child: Text(
-// "Log In",
-// style: TextStyle(color: Colors.green),
-// ),
-// )
+  setSearchParam(String refid) {
+    List<String> caseSearchList = [];
+    String temp = "";
+    for (int i = 0; i < refid.length; i++) {
+      temp = temp + refid[i];
+      caseSearchList.add(temp);
+    }
+    return caseSearchList;
+  }
+}

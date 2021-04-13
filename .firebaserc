@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "portifolio-b7066"
+    "production": "sgmart-maligai",
+    "default": "sgmart-maligai"
   }
 }
