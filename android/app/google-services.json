@@ -1,42 +1,33 @@
 {
   "project_info": {
-    "project_number": "563549139763",
-    "firebase_url": "https://portifolio-b7066.firebaseio.com",
-    "project_id": "portifolio-b7066",
-    "storage_bucket": "portifolio-b7066.appspot.com"
+    "project_number": "345856391211",
+    "project_id": "sgmart-maligai",
+    "storage_bucket": "sgmart-maligai.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:563549139763:android:1958e836e08a9dfe10c446",
+        "mobilesdk_app_id": "1:345856391211:android:c68f7f8d4b05767335d26e",
         "android_client_info": {
           "package_name": "com.example.sgmart"
         }
       },
       "oauth_client": [
         {
-          "client_id": "563549139763-7q09bdt0m8bcett9sja710cq3lsvfsrc.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.sgmart",
-            "certificate_hash": "bd7c3240df97419309fa60d884ac7915d7a0cd7b"
-          }
-        },
-        {
-          "client_id": "563549139763-bfsrior118ukgfb9r027ncf1om4649o3.apps.googleusercontent.com",
+          "client_id": "345856391211-rkis9gdvad6kof6pkqsugfq6loois650.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBNH0xMCldoibkBGLz6HzBxLdidUJTFSgw"
+          "current_key": "AIzaSyC0vK-n9d-2QjiHrT9FSz2gppiR8HdHQ1s"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "563549139763-bfsrior118ukgfb9r027ncf1om4649o3.apps.googleusercontent.com",
+              "client_id": "345856391211-rkis9gdvad6kof6pkqsugfq6loois650.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

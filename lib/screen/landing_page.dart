@@ -1,12 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sgmart/admin/user_detail.dart';
+import 'package:lottie/lottie.dart';
+import 'package:sgmart/admin/user.dart';
 import 'package:sgmart/home.dart';
 import 'package:sgmart/login&signin/login.dart';
 import 'package:sgmart/screen/pages/about.dart';
 import 'package:sgmart/screen/pages/home.dart';
 import 'package:sgmart/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../login&signin/login.dart';
 
@@ -27,10 +29,64 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     super.initState();
   }
 
+  final keyIsFirstLoaded = 'is_first_loaded';
+  showDialogIfFirstLoaded(BuildContext context) async {
+    if (FirebaseAuth.instance.currentUser.metadata.lastSignInTime ==
+        FirebaseAuth.instance.currentUser.metadata.creationTime) {
+      showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return Dialog(
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.3,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context),
+                    child: Stack(
+                      children: [
+                        Icon(Icons.close),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset('asset/sgmart.png'),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                'Welcome to SG Mart Maligai',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(color: kPrimaryColor),
+                              ),
+                            ),
+                            Image.asset('asset/welcome.jpg'),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                'Welcome to SGMART Maligai Partner Group. Each new partner  benefits from and contributes to our Sgmart Member network strength.',
+                                textAlign: TextAlign.justify,
+                              ),
+                            )
+                          ],
+                        ),
+                        Lottie.asset('welcome_animation.json',
+                            width: MediaQuery.of(context).size.width,
+                            height: MediaQuery.of(context).size.height * 0.5),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
+    Future.delayed(Duration.zero, () => showDialogIfFirstLoaded(context));
     return Scaffold(
       appBar: AppBar(
         // leading: Image.asset('asset/sgmart.png',),
@@ -52,10 +108,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 Tab(
                   text: "Home",
                 ),
-
                 //Business
                 Tab(
-                  text: "Start A Business",
+                  text: "Our Products",
                 ),
                 Tab(
                   text: "About Sg Mart",
@@ -122,7 +177,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         iconTheme: Theme.of(context).iconTheme.copyWith(color: kPrimaryColor),
       ),
       drawer: FirebaseAuth.instance.currentUser != null
-          ? FirebaseAuth.instance.currentUser == 'l5ciqKvGzwQQ8FDAJVElASejhha2'
+          ? FirebaseAuth.instance.currentUser.uid ==
+                  '7QxRBK5F7VTpDtS60IX2WQrX3Jr1'
               ? Drawer(
                   child: Container(
                     color: Colors.white,
@@ -138,7 +194,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => User_Detail(),
+                                  builder: (context) => UserPage(),
                                 ));
                           },
                         ),
@@ -173,24 +229,28 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     return TabBarView(
       controller: _tabController,
       children: [
-        ShopHome(),
         // Promotion(),
 
         FirebaseAuth.instance.currentUser == null
             ? Center(
                 child: TextButton(
-                    onPressed: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => Login()));
-                    },
-                    child: Text(
-                      'Please Sign in To Continue',
-                      style: TextStyle(color: Colors.grey),
-                    )),
+                  onPressed: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => Login()));
+                  },
+                  child: Text(
+                    'Please Sign in To Continue',
+                    style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18.0),
+                  ),
+                ),
               )
             : UserHomePage(
                 phone: widget.phone,
               ),
+        ShopHome(),
         About()
       ],
     );

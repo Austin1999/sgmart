@@ -46,47 +46,52 @@ class _ShopHomeState extends State<ShopHome> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Stack(
-              children: [
-                CarouselSlider(
-                  items: imageSliders,
-                  options: CarouselOptions(
+            // Stack(
+            //   children: [
+            //     CarouselSlider(
+            //       items: imageSliders,
+            //       options: CarouselOptions(
 
-                      // height: MediaQuery.of(context).size.height*0.4,
-                      autoPlay: true,
-                      enlargeCenterPage: true,
-                      aspectRatio: size.width > 1000 ? 3.5 : 2.5,
-                      onPageChanged: (index, reason) {
-                        setState(() {
-                          _current = index;
-                        });
-                      }),
-                ),
+            //           // height: MediaQuery.of(context).size.height*0.4,
+            //           autoPlay: true,
+            //           enlargeCenterPage: true,
+            //           aspectRatio: size.width > 1000 ? 3.5 : 2.5,
+            //           onPageChanged: (index, reason) {
+            //             setState(() {
+            //               _current = index;
+            //             });
+            //           }),
+            //     ),
 
-                //length of carousel
-                Positioned(
-                  left: size.width * 0.5,
-                  bottom: 10.0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: imgList.map((url) {
-                      int index = imgList.indexOf(url);
-                      return Container(
-                        width: 8.0,
-                        height: 8.0,
-                        margin: EdgeInsets.symmetric(
-                            vertical: 10.0, horizontal: 2.0),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _current == index
-                              ? Color.fromRGBO(0, 0, 0, 0.9)
-                              : Color.fromRGBO(0, 0, 0, 0.4),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
+            //     //length of carousel
+            //     Positioned(
+            //       left: size.width * 0.5,
+            //       bottom: 10.0,
+            //       child: Row(
+            //         mainAxisAlignment: MainAxisAlignment.center,
+            //         children: imgList.map((url) {
+            //           int index = imgList.indexOf(url);
+            //           return Container(
+            //             width: 8.0,
+            //             height: 8.0,
+            //             margin: EdgeInsets.symmetric(
+            //                 vertical: 10.0, horizontal: 2.0),
+            //             decoration: BoxDecoration(
+            //               shape: BoxShape.circle,
+            //               color: _current == index
+            //                   ? Color.fromRGBO(0, 0, 0, 0.9)
+            //                   : Color.fromRGBO(0, 0, 0, 0.4),
+            //             ),
+            //           );
+            //         }).toList(),
+            //       ),
+            //     ),
+            //   ],
+            // ),
+            Image.asset(
+              'asset/sgbanner.jpg',
+              fit: BoxFit.cover,
+              width: size.width,
             ),
             SizedBox(
               height: size.height * .010,

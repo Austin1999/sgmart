@@ -3,15 +3,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:sgmart/admin/userdetail.dart';
 
 import '../constants.dart';
 
-class User_Detail extends StatefulWidget {
+class UserPage extends StatefulWidget {
   @override
-  _User_DetailState createState() => _User_DetailState();
+  _UserPageState createState() => _UserPageState();
 }
 
-class _User_DetailState extends State<User_Detail> {
+class _UserPageState extends State<UserPage> {
   TextEditingController commission = TextEditingController();
   @override
   Widget build(BuildContext context) {
@@ -28,11 +29,11 @@ class _User_DetailState extends State<User_Detail> {
       ),
       body: Container(
         //data fetching
-        child: FutureBuilder(
-          future: FirebaseFirestore.instance
+        child: StreamBuilder(
+          stream: FirebaseFirestore.instance
               .collection('Users')
               .orderBy('name')
-              .get(),
+              .snapshots(),
           builder: (_, snapshot) {
             //Before data display
             if (!snapshot.hasData) {
@@ -42,29 +43,36 @@ class _User_DetailState extends State<User_Detail> {
               return GridView.builder(
                   itemCount: snapshot.data.docs.length,
                   itemBuilder: (_, index) {
+                    print(snapshot.data.docs[index].id);
                     return Card(
                       child: ListTile(
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => UserDetail(
+                                      snapshot: snapshot.data.docs[index],
+                                    ))),
                         leading: Icon(
                           Icons.person,
                           color: Colors.green,
                         ),
                         title: Text(
-                          snapshot.data.docs[index].get("name"),
+                          snapshot.data.docs[index].get('name'),
                         ),
                         subtitle: Text(
                           snapshot.data.docs[index].get('phone'),
                         ),
-                        trailing: IconButton(
-                          splashColor: Colors.green,
-                          onPressed: () {
-                            diaglog(snapshot.data.docs[index].id,
-                                snapshot.data.docs[index].get("name"));
-                          },
-                          icon: Icon(
-                            Icons.menu,
-                            color: Colors.green,
-                          ),
-                        ),
+                        // trailing: IconButton(
+                        //   splashColor: Colors.green,
+                        //   onPressed: () {
+                        //     diaglog(snapshot.data.docs[index].id,
+                        //         snapshot.data.docs[index].get("name"));
+                        //   },
+                        //   icon: Icon(
+                        //     Icons.menu,
+                        //     color: Colors.green,
+                        //   ),
+                        // ),
                       ),
                     );
                   },

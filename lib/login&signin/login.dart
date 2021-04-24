@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sgmart/constants.dart';
+import 'package:sgmart/login&signin/adminlogin.dart';
 import 'package:sgmart/screen/landing_page.dart';
 
 class Login extends StatefulWidget {
@@ -24,6 +26,7 @@ class _LoginState extends State<Login> {
   bool isLoading = true;
   bool phoneexists = false;
   ConfirmationResult result;
+  String refname;
 
   String emailValidator(String value) {
     Pattern pattern =
@@ -88,7 +91,7 @@ class _LoginState extends State<Login> {
                         height: size.height * 0.03,
                       ),
                       Text(
-                        "Welcome Back!",
+                        "Welcome Back! to SG Maligai",
                         style: Theme.of(context)
                             .textTheme
                             .headline5
@@ -131,17 +134,26 @@ class _LoginState extends State<Login> {
                       child: Column(
                         children: [
                           //Signup
-                          Center(
-                            child: Text(
-                              "Signin",
-                              style: TextStyle(
-                                  color: Colors.black54, fontSize: 20),
+
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Center(
+                              child: Image.asset('asset/sgmart.png'),
                             ),
                           ),
-
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Center(
+                              child: Text(
+                                "Signin",
+                                style: TextStyle(
+                                    color: Colors.black54, fontSize: 20),
+                              ),
+                            ),
+                          ),
                           //Phone
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(40, 25, 40, 10),
+                            padding: const EdgeInsets.fromLTRB(40, 25, 40, 5),
                             child: TextFormField(
                               onChanged: (value) async {
                                 if (value.length == 13) {
@@ -173,11 +185,15 @@ class _LoginState extends State<Login> {
                               },
                               autovalidate:
                                   phone.text.length >= 13 ? true : false,
-                              keyboardType: TextInputType.phone,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: <TextInputFormatter>[
+                                FilteringTextInputFormatter.deny(
+                                  RegExp(r'[a-zA-Z]'),
+                                ),
+                              ],
                               validator: phoneValidator,
                               controller: phone,
                               decoration: InputDecoration(
-                                  hintText: "Enter Phone Number",
                                   icon: Icon(Icons.phone),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20),
@@ -187,14 +203,10 @@ class _LoginState extends State<Login> {
                           SizedBox(
                             height: size.height * 0.02,
                           ),
-
-                          SizedBox(
-                            height: size.height * 0.02,
-                          ),
                           //referal
                           phoneexists
                               ? Text(
-                                  'Welcome back!',
+                                  'Welcome back! to SG Maligai',
                                   style: Theme.of(context)
                                       .textTheme
                                       .button
@@ -267,6 +279,7 @@ class _LoginState extends State<Login> {
                                                   ref = document['personalid'];
                                                   referalphone.text =
                                                       document['phone'];
+                                                  refname = document['name'];
                                                 });
                                               },
                                               title: Text(
@@ -350,6 +363,7 @@ class _LoginState extends State<Login> {
                             child: Container(
                               width: double.infinity,
                               child: FloatingActionButton.extended(
+                                  heroTag: 'btn1',
                                   backgroundColor: Colors.green,
                                   label: Text(
                                     codesent ? "Verify OTP" : "Send OTP",
@@ -412,16 +426,27 @@ class _LoginState extends State<Login> {
                                           await result
                                               .confirm(otp.text)
                                               .then((v) async {
-                                            // await v.user.updateProfile(
-                                            //     photoURL: phone.text);
-                                            // await v.user.reload();
-                                            // print('Referal uid : $ref');
-
                                             var id = referal.text.toString() +
                                                 phone.text.substring(3);
                                             var len = id.length;
                                             if (phoneexists) {
+                                              await FirebaseAuth
+                                                  .instance.currentUser
+                                                  .updateProfile(
+                                                      photoURL: phone.text);
+                                              await FirebaseAuth
+                                                  .instance.currentUser
+                                                  .reload();
                                               print('phoneexists');
+                                              Navigator.pop(context);
+                                              Navigator.pushReplacement(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => Home(
+                                                    phone: phone.text,
+                                                  ),
+                                                ),
+                                              );
                                             } else {
                                               var userid =
                                                   await FirebaseFirestore
@@ -437,12 +462,13 @@ class _LoginState extends State<Login> {
                                               print(v.user.uid);
                                               await FirebaseFirestore.instance
                                                   .collection('Users')
-                                                  .doc(v.user.uid)
+                                                  .doc(phone.text)
                                                   .set({
+                                                'ref': referal.text,
+                                                'refname': refname,
                                                 'parentid': ref,
                                                 'uid': v.user.uid,
                                                 'phone': phone.text,
-                                                'level': len / 10,
                                                 'id': id,
                                                 'personalVolume': 0,
                                                 'groupVolume': 0,
@@ -451,17 +477,25 @@ class _LoginState extends State<Login> {
                                                 'personalid': userid + 1,
                                                 "searchindex":
                                                     setSearchParam(phone.text),
-                                              }).whenComplete(() =>
-                                                      FirebaseFirestore.instance
-                                                          .collection('Users')
-                                                          .doc('phone')
-                                                          .update({
-                                                        'user': FieldValue
-                                                            .increment(1),
-                                                        'userphone': FieldValue
-                                                            .arrayUnion(
-                                                                [phone.text])
-                                                      }));
+                                              }).whenComplete(() async {
+                                                await FirebaseAuth
+                                                    .instance.currentUser
+                                                    .updateProfile(
+                                                        photoURL: phone.text);
+                                                await FirebaseAuth
+                                                    .instance.currentUser
+                                                    .reload();
+                                                await FirebaseFirestore.instance
+                                                    .collection('Users')
+                                                    .doc('phone')
+                                                    .update({
+                                                  'user':
+                                                      FieldValue.increment(1),
+                                                  'userphone':
+                                                      FieldValue.arrayUnion(
+                                                          [phone.text])
+                                                });
+                                              });
                                               Navigator.pop(context);
                                               Navigator.pushReplacement(
                                                 context,
@@ -481,7 +515,50 @@ class _LoginState extends State<Login> {
                                   }),
                             ),
                           ),
-                          //password
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: size.width * 0.20,
+                                child: Divider(
+                                  thickness: 2.0,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text('OR'),
+                              ),
+                              SizedBox(
+                                width: size.width * 0.20,
+                                child: Divider(
+                                  thickness: 2.0,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: FloatingActionButton.extended(
+                                  icon: Icon(
+                                    Icons.mail,
+                                    color: kPrimaryColor,
+                                  ),
+                                  heroTag: 'btn2',
+                                  backgroundColor: Colors.white,
+                                  onPressed: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                AdminLogin()));
+                                  },
+                                  label: Text(
+                                    'Continue with Email',
+                                    style: TextStyle(color: kPrimaryColor),
+                                  )),
+                            ),
+                          )
                         ],
                       ),
                     ),
@@ -492,7 +569,6 @@ class _LoginState extends State<Login> {
           :
           //RightSide
           Container(
-              // height: size.height * .80,
               child: SingleChildScrollView(
                 child: Form(
                   key: formkey,
@@ -534,15 +610,8 @@ class _LoginState extends State<Login> {
                                       });
                                     }
                                   }
-                                  // userphone.forEach((e) {
-
-                                  // });
                                 },
                               );
-
-                              // print(phoneexists);
-                              // print(phoneexist);
-                              // print(phone.text);
                             }
                           },
                           keyboardType: TextInputType.phone,
@@ -634,6 +703,7 @@ class _LoginState extends State<Login> {
                                               ref = document['personalid'];
                                               referalphone.text =
                                                   document['phone'];
+                                              refname = document['name'];
                                             });
                                           },
                                           title: Text(
@@ -771,16 +841,27 @@ class _LoginState extends State<Login> {
                                       await result
                                           .confirm(otp.text)
                                           .then((v) async {
-                                        // await v.user.updateProfile(
-                                        //     photoURL: phone.text);
-                                        // await v.user.reload();
-                                        // print('Referal uid : $ref');
-
                                         var id = referal.text.toString() +
                                             phone.text.substring(3);
                                         var len = id.length;
                                         if (phoneexists) {
                                           print('phoneexists');
+                                          await FirebaseAuth
+                                              .instance.currentUser
+                                              .updateProfile(
+                                                  photoURL: phone.text);
+                                          await FirebaseAuth
+                                              .instance.currentUser
+                                              .reload();
+                                          Navigator.pop(context);
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => Home(
+                                                phone: phone.text,
+                                              ),
+                                            ),
+                                          );
                                         } else {
                                           var userid = await FirebaseFirestore
                                               .instance
@@ -796,6 +877,8 @@ class _LoginState extends State<Login> {
                                               .collection('Users')
                                               .doc(v.user.uid)
                                               .set({
+                                            'ref': referalphone.text,
+                                            'refname': refname,
                                             'parentid': ref,
                                             'uid': v.user.uid,
                                             'phone': phone.text,
@@ -808,17 +891,24 @@ class _LoginState extends State<Login> {
                                             'personalid': userid + 1,
                                             "searchindex":
                                                 setSearchParam(phone.text),
-                                          }).whenComplete(() =>
-                                                  FirebaseFirestore.instance
-                                                      .collection('Users')
-                                                      .doc('phone')
-                                                      .update({
-                                                    'user':
-                                                        FieldValue.increment(1),
-                                                    'userphone':
-                                                        FieldValue.arrayUnion(
-                                                            [phone.text])
-                                                  }));
+                                          }).whenComplete(() async {
+                                            await FirebaseAuth
+                                                .instance.currentUser
+                                                .updateProfile(
+                                                    photoURL: phone.text);
+                                            await FirebaseAuth
+                                                .instance.currentUser
+                                                .reload();
+                                            FirebaseFirestore.instance
+                                                .collection('Users')
+                                                .doc('phone')
+                                                .update({
+                                              'user': FieldValue.increment(1),
+                                              'userphone':
+                                                  FieldValue.arrayUnion(
+                                                      [phone.text])
+                                            });
+                                          });
                                           Navigator.pop(context);
                                           Navigator.pushReplacement(
                                             context,
@@ -838,7 +928,44 @@ class _LoginState extends State<Login> {
                               }),
                         ),
                       ),
-                      //password
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: size.width * 0.35,
+                            child: Divider(
+                              thickness: 2.0,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text('OR'),
+                          ),
+                          SizedBox(
+                            width: size.width * 0.35,
+                            child: Divider(
+                              thickness: 2.0,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      Container(
+                        width: double.infinity,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: FloatingActionButton.extended(
+                              heroTag: 'btn2',
+                              backgroundColor: Colors.green,
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => AdminLogin()));
+                              },
+                              label: Text('Sign In with Email')),
+                        ),
+                      )
                     ],
                   ),
                 ),
